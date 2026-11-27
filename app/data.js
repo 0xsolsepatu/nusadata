@@ -72,13 +72,19 @@ export const ECONOMY = {
   perCapita2025: { value: 83.7, unit: 'Rp million', year: 2025, source: SOURCES.bpsBrs, note: 'US$5,083.4' },
   perCapita2024: { value: 78.6, unit: 'Rp million', year: 2024, source: SOURCES.bpsBrs, note: 'US$4,960.3' },
   growthSeries: [
+    { year: 2015, value: 4.88 },
+    { year: 2016, value: 5.03 },
+    { year: 2017, value: 5.07 },
+    { year: 2018, value: 5.17 },
+    { year: 2019, value: 5.02 },
+    { year: 2020, value: -2.07 },
     { year: 2021, value: 3.7 },
     { year: 2022, value: 5.31 },
     { year: 2023, value: 5.05 },
     { year: 2024, value: 5.03 },
     { year: 2025, value: 5.11 },
   ],
-  growthSeriesSource: 'BPS, annual GDP growth (c-to-c)',
+  growthSeriesSource: 'BPS / World Bank WDI, annual GDP growth (c-to-c), 2015–2025',
   quarterly2026: [
     { label: 'Q1 2026', value: 5.61 },
     { label: 'Q2 2026', value: 5.29 },
@@ -132,6 +138,13 @@ export const LABOUR = {
   tpaks: { value: 70.33, unit: '%', period: 'Aug 2026', source: SOURCES.bpsSakernas, note: 'Labour-force participation rate' },
   avgWage: { value: 3.42, unit: 'Rp million per month', period: 'Aug 2026', source: SOURCES.bpsSakernas, note: 'Average wage of labourers' },
   tptSeries: [
+    { year: 2015, value: 6.18 },
+    { year: 2016, value: 5.61 },
+    { year: 2017, value: 5.5 },
+    { year: 2018, value: 5.34 },
+    { year: 2019, value: 5.28 },
+    { year: 2020, value: 7.07 },
+    { year: 2021, value: 6.49 },
     { year: 2022, value: 5.86 },
     { year: 2023, value: 5.32 },
     { year: 2024, value: 4.91 },
@@ -162,6 +175,12 @@ export const PRICES = {
   yoySep2026: { value: 3.28, unit: '% y-on-y', period: 'Sep 2026', source: SOURCES.bpsBrs },
   yoyOct2025: { value: 2.86, unit: '% y-on-y', period: 'Oct 2025', source: SOURCES.bpsBrs },
   calendarSeries: [
+    { year: 2015, value: 3.35 },
+    { year: 2016, value: 3.02 },
+    { year: 2017, value: 3.61 },
+    { year: 2018, value: 3.13 },
+    { year: 2019, value: 2.72 },
+    { year: 2020, value: 1.68 },
     { year: 2021, value: 1.87 },
     { year: 2022, value: 5.51 },
     { year: 2023, value: 2.61 },
@@ -192,14 +211,26 @@ export const TRADE = {
   surplusJanSep2026: { value: 10.61, unit: 'US$ billion', period: 'Jan–Sep 2026', source: SOURCES.bpsBrs, note: 'Down from US$33.54bn in Jan–Sep 2025' },
   exports2025: { value: 282.91, unit: 'US$ billion', year: 2025, source: SOURCES.bpsBrs, note: '+6.15% on 2024' },
   surplus2025: { value: 41.05, unit: 'US$ billion', year: 2025, source: SOURCES.bpsBrs },
+  // Total exports, US$ billion. 2015–2024: BPS, Statistik Perdagangan Luar
+  // Negeri Indonesia 2023–2024, Table 1.1 (latest vintage, so 2024 is
+  // 266.53 — the figure the 2025 full-year release's +6.15% is measured
+  // against); 2025: BRS full-year release. v1 used the older BRS vintage
+  // for 2021–2024 (231.61 / 291.90 / 258.82 / 264.70); v2 switches to the
+  // one consistent vintage above.
   exportsSeries: [
-    { year: 2021, value: 231.61 },
-    { year: 2022, value: 291.9 },
-    { year: 2023, value: 258.82 },
-    { year: 2024, value: 264.7 },
+    { year: 2015, value: 150.37 },
+    { year: 2016, value: 145.13 },
+    { year: 2017, value: 168.83 },
+    { year: 2018, value: 180.01 },
+    { year: 2019, value: 167.68 },
+    { year: 2020, value: 163.19 },
+    { year: 2021, value: 231.71 },
+    { year: 2022, value: 292.19 },
+    { year: 2023, value: 259.53 },
+    { year: 2024, value: 266.53 },
     { year: 2025, value: 282.91 },
   ],
-  exportsSeriesSource: 'BPS, total exports (US$ billion)',
+  exportsSeriesSource: 'BPS, total exports (US$ billion) — Statistik Perdagangan Luar Negeri, Table 1.1 (2015–2024); BRS full-year release (2025)',
   partners: [
     { name: 'United States', value: 14.26 },
     { name: 'India', value: 10.59 },
@@ -207,6 +238,27 @@ export const TRADE = {
   ],
   partnersSource: 'BPS, Jan–Sep 2026 cumulative trade surplus by partner (total, oil + non-oil)',
   pmiOct2026: { value: 54.0, unit: 'index (above 50 = expansion)', period: 'Oct 2026', source: SOURCES.spGlobal, note: 'Up from 52.4 in Sep 2026' },
+};
+
+// --- Indonesia vs its ASEAN neighbours -------------------------------------
+// IMF, World Economic Outlook, October 2025 (2025 estimates). One vintage,
+// one source, so the six countries are comparable. Population in millions;
+// GDP in US$ billion, nominal; gdpPc nominal US$ per person; gdpPppPc in
+// international dollars per person. Indonesia's own BPS release puts its
+// 2025 GDP per capita slightly higher, at US$5,083.4 — the IMF figure is
+// an October 2025 estimate, and the Compare page says so.
+export const COMPARE = {
+  source: 'IMF, World Economic Outlook, October 2025 (2025 estimates)',
+  aseanPop: 690.48,
+  aseanGdp: 4167.69,
+  countries: [
+    { name: 'Indonesia', pop: 284.42, gdp: 1430.0, gdpPc: 5030, gdpPppPc: 17610 },
+    { name: 'Singapore', pop: 5.98, gdp: 564.77, gdpPc: 92930, gdpPppPc: 156760 },
+    { name: 'Thailand', pop: 70.33, gdp: 546.22, gdpPc: 7770, gdpPppPc: 26320 },
+    { name: 'Philippines', pop: 114.37, gdp: 497.5, gdpPc: 4350, gdpPppPc: 12930 },
+    { name: 'Vietnam', pop: 101.59, gdp: 484.73, gdpPc: 4741, gdpPppPc: 17484 },
+    { name: 'Malaysia', pop: 33.85, gdp: 444.98, gdpPc: 13140, gdpPppPc: 43470 },
+  ],
 };
 
 // --- Health & human development --------------------------------------------
@@ -255,13 +307,15 @@ export const TOURISM = {
   visitors2025: { value: 15.39, unit: 'million visits', year: 2025, source: SOURCES.bpsBrs, note: '+10.80% on 2024; highest in six years; released 2 Feb 2026' },
   visitorsDec2025: { value: 1.41, unit: 'million visits', period: 'Dec 2025', source: SOURCES.bpsBrs, note: '+14.43% y-on-y' },
   visitorsSeries: [
+    { year: 2019, value: 16.11 },
+    { year: 2020, value: 4.05 },
     { year: 2021, value: 1.56 },
     { year: 2022, value: 5.89 },
     { year: 2023, value: 11.68 },
     { year: 2024, value: 13.89 },
     { year: 2025, value: 15.39 },
   ],
-  visitorsSource: 'BPS, foreign visitor arrivals (2024 derived from the reported +10.80% growth)',
+  visitorsSource: 'BPS, foreign visitor arrivals (2019–2020: BPS releases; 2024 derived from the reported +10.80% growth)',
   origins: [
     { name: 'Malaysia', value: 17.2, people: 2.6 },
     { name: 'Australia', value: 11.4, people: 1.7 },
@@ -347,4 +401,8 @@ export const INDICATORS = [
   { name: 'Poverty rate, Mar 2025', value: '8.47%', route: '#/population' },
   { name: 'Gini ratio, Sep 2025', value: '0.363', route: '#/population' },
   { name: 'Poverty line, Mar 2025', value: 'Rp609,160 a month', route: '#/population' },
+  { name: 'GDP per capita, Indonesia vs ASEAN', value: 'US$5,030 (IMF, 2025)', route: '#/compare' },
+  { name: 'Largest ASEAN economy', value: 'Indonesia, US$1,430bn (IMF, 2025)', route: '#/compare' },
+  { name: 'GDP per capita (PPP), Indonesia', value: 'US$17,610 (IMF, 2025)', route: '#/compare' },
+  { name: 'Economic growth, 2015–2025', value: 'From 4.88% to 5.11%; −2.07% in 2020', route: '#/economy' },
 ];

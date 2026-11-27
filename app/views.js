@@ -5,21 +5,35 @@
 
 import {
   AS_OF, POPULATION, ECONOMY, LABOUR, PRICES, TRADE, HEALTH, EDUCATION,
-  TOURISM, POVERTY, RELEASES, INDICATORS, SOURCES,
+  TOURISM, POVERTY, RELEASES, INDICATORS, SOURCES, COMPARE,
 } from './data.js';
-import { lineChart, barChart, hbarChart } from './charts.js';
+import { lineChart, barChart, hbarChart, donutChart, sparkline } from './charts.js';
 import { indonesiaMap } from './map.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
 const num = (v, d = 2) => Number(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
 
 // One figure, with its source and period printed under it — the site's
-// basic promise: no number without a source.
-function fig(value, unit, label, source, note) {
+// basic promise: no number without a source. `extra` is optional HTML
+// (a trend line, a sparkline) inserted between the label and the source.
+function fig(value, unit, label, source, note, extra = '') {
   return `<div class="kpi"><div class="kpi-value">${value}</div><div class="kpi-unit">${esc(unit)}</div>
   <div class="kpi-label">${esc(label)}</div>
+  ${extra}
   <div class="kpi-src">Source: ${esc(source)}${note ? ` · ${esc(note)}` : ''}</div></div>`;
 }
+
+// "▲ +0.08 pts on 2024" — the change from the previous point of a series,
+// for the trend line under a KPI value.
+function delta(series, unit = '', decimals = 2) {
+  const last = series[series.length - 1];
+  const prev = series[series.length - 2];
+  const d = last.value - prev.value;
+  const arrow = d > 0 ? '▲' : d < 0 ? '▼' : '—';
+  const plab = prev.label ?? prev.year;
+  return `<div class="kpi-trend">${arrow} ${d > 0 ? '+' : ''}${fmtNum(d, decimals)}${unit} vs ${plab}</div>`;
+}
+const fmtNum = (v, d = 2) => Number(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
 
 function srcBox(source) {
   return `<p class="srcbox">All figures on this page: ${esc(source)}</p>`;
@@ -37,6 +51,7 @@ function navCards() {
   const pages = [
     ['#/population', 'Population', '284.44m people in 2025, where they live, and how fast the count grows.'],
     ['#/economy', 'Economy', 'GDP Rp23,821 trillion in 2025, growth 5.11%, and what drives it.'],
+    ['#/compare', 'Compare: ASEAN', 'Indonesia next to Vietnam, Thailand, Malaysia, the Philippines and Singapore.'],
     ['#/labour', 'Labour', '155.37m in the labour force; open unemployment 4.75% in August 2026.'],
     ['#/prices', 'Prices', 'Inflation 3.23% y-on-y in October 2026 — what got dearer, and why.'],
     ['#/trade', 'Trade', 'Exports US$282.91bn in 2025; a US$3.36bn surplus in September 2026.'],
@@ -56,29 +71,45 @@ function releasesList(items) {
 // --- Home -------------------------------------------------------------------
 export function home() {
   const kpis = [
-    fig('284.44m', 'people', 'Population, 2025', SOURCES.bps, 'Mid-year projection'),
-    fig('5.11%', 'growth', 'Economy, 2025', SOURCES.bpsBrs, 'Released 5 Feb 2026'),
-    fig('3.23%', 'y-on-y', 'Inflation, Oct 2026', SOURCES.bpsBrs, 'Released 2 Nov 2026'),
-    fig('4.75%', 'open unemployment', 'Labour, Aug 2026', SOURCES.bpsBrs, 'Released 5 Nov 2026'),
-    fig('8.07%', 'of the population', 'Poverty, Mar 2026', SOURCES.bpsBrs, 'Released 5 Aug 2026'),
-    fig('75.90', 'index', 'Human Development, 2025', SOURCES.bpsBrs, 'Released 5 Nov 2025'),
+    fig('284.44m', 'people', 'Population, 2025', SOURCES.bps, 'Mid-year projection',
+      delta(POPULATION.series, 'm') + `<div class="kpi-spark">${sparkline({ series: POPULATION.series })}</div>`),
+    fig('5.11%', 'growth', 'Economy, 2025', SOURCES.bpsBrs, 'Released 5 Feb 2026',
+      delta(ECONOMY.growthSeries, ' pts') + `<div class="kpi-spark">${sparkline({ series: ECONOMY.growthSeries, color: '#b3541e' })}</div>`),
+    fig('3.23%', 'y-on-y', 'Inflation, Oct 2026', SOURCES.bpsBrs, 'Released 2 Nov 2026',
+      `<div class="kpi-trend">Calendar-year 2025: 2.92% ▲ 1.35 pts on 2024</div><div class="kpi-spark">${sparkline({ series: PRICES.calendarSeries, color: '#b3541e' })}</div>`),
+    fig('4.75%', 'open unemployment', 'Labour, Aug 2026', SOURCES.bpsBrs, 'Released 5 Nov 2026',
+      delta(LABOUR.tptSeries, ' pts') + `<div class="kpi-spark">${sparkline({ series: LABOUR.tptSeries })}</div>`),
+    fig('8.07%', 'of the population', 'Poverty, Mar 2026', SOURCES.bpsBrs, 'Released 5 Aug 2026',
+      delta(POVERTY.povertySeries, ' pts') + `<div class="kpi-spark">${sparkline({ series: POVERTY.povertySeries, color: '#b3541e' })}</div>`),
+    fig('75.90', 'index', 'Human Development, 2025', SOURCES.bpsBrs, 'Released 5 Nov 2025',
+      `<div class="kpi-trend">▲ 0.88 pts on 2024 — the fastest rise since 2020</div>`),
   ].join('');
   return `
   <div class="hero">
-    <p class="eyebrow">Indonesia · Official statistics, explained</p>
-    <h1>Indonesia in numbers</h1>
-    <p class="lede">The population, the economy, jobs, prices, trade, health and schooling — every figure with its source and its year, from the releases of BPS, Statistics Indonesia. Data as of <strong>${esc(AS_OF)}</strong>.</p>
-    <div class="search-wrap">
-      <label for="search">Find a figure</label>
-      <input id="search" type="search" placeholder="Try “inflation”, “exports”, “unemployment”…" autocomplete="off">
-      <div id="search-results" class="search-results" aria-live="polite"></div>
+    <div class="hero-main">
+      <p class="eyebrow">Indonesia · Official statistics, explained</p>
+      <h1>Indonesia in numbers</h1>
+      <p class="lede">The population, the economy, jobs, prices, trade, health and schooling — every figure with its source and its year, from the releases of BPS, Statistics Indonesia. Data as of <strong>${esc(AS_OF)}</strong>.</p>
+      <div class="search-wrap">
+        <label for="search">Find a figure</label>
+        <input id="search" type="search" placeholder="Try “inflation”, “exports”, “unemployment”…" autocomplete="off">
+        <div id="search-results" class="search-results" aria-live="polite"></div>
+      </div>
     </div>
+    <aside class="hero-side" aria-label="Indonesia at a glance">
+      <p class="hero-side-title">Indonesia at a glance</p>
+      <div class="hero-stat"><span class="hero-num">No. 1</span><span class="hero-cap">in ASEAN by economy — US$1,430bn GDP (IMF, 2025)</span></div>
+      <div class="hero-stat"><span class="hero-num">No. 4</span><span class="hero-cap">most populous country on earth — 284.44m people (BPS, 2025)</span></div>
+      <div class="hero-stat"><span class="hero-num">75.90</span><span class="hero-cap">Human Development Index — “High” category (BPS, 2025)</span></div>
+    </aside>
   </div>
   <div class="kpi-grid">${kpis}</div>
   <div class="chart-row">
     ${chartCard('Population, 2020–2025 (millions)', lineChart({ series: POPULATION.series, decimals: 2, title: 'Population 2020 to 2025' }), POPULATION.seriesSource + '.')}
-    ${chartCard('Economic growth, 2021–2025 (% a year)', barChart({ series: ECONOMY.growthSeries, decimals: 2, unit: '%', title: 'GDP growth 2021 to 2025' }), ECONOMY.growthSeriesSource + '.')}
+    ${chartCard('Economic growth, 2015–2025 (% a year)', barChart({ series: ECONOMY.growthSeries, decimals: 2, unit: '%', title: 'GDP growth 2015 to 2025' }), ECONOMY.growthSeriesSource + '. 2020 is the pandemic contraction (−2.07%); every other year since 2015 grew between 3.7% and 5.3%.')}
   </div>
+  ${section('Indonesia next to its neighbours', `<p>ASEAN's biggest economy — US$1,430bn in 2025 — but only US$5,030 per person, fifth of its six largest neighbours. <a href="#/compare">See the full comparison →</a></p>
+  <div class="chart-card">${hbarChart({ series: [...COMPARE.countries].sort((a, b) => b.gdp - a.gdp).map((c) => ({ name: c.name, value: c.gdp })), decimals: 0, unit: '', maxValue: 1500, title: 'GDP 2025, US$ billion' })}<p class="caption">${esc(COMPARE.source)}. Indonesia's economy is larger than Thailand's and Singapore's combined.</p></div>`)}
   ${section('Latest releases', releasesList(RELEASES.slice(0, 5)) + `<p class="more"><a href="#/releases">See all ${RELEASES.length} releases →</a></p>`)}
   ${section('Explore the numbers', navCards())}
   <p class="fineprint">NusaData is an independent site. It republishes figures from public BPS releases and says so under every number; it is not affiliated with BPS. Figures are shown exactly as published — see <a href="#/sources">Sources &amp; methods</a>.</p>`;
@@ -93,7 +124,7 @@ export function population() {
   <p class="crumb"><a href="#/">← Home</a></p>
   <h1>Population</h1>
   <p class="lede">Indonesia is the world's fourth most populous country. Growth has slowed to about 1% a year, and more than half the population still lives on Java.</p>
-  <div class="kpi-grid">
+  <div class="kpi-grid four">
     ${fig('284.44m', 'people', 'Population, 2025', SOURCES.bps, 'Mid-year projection')}
     ${fig('1.01%', 'a year', 'Growth, 2025', SOURCES.bps, 'Down from 1.04% in 2024')}
     ${fig('≈151', 'people per km²', 'Density, 2025', SOURCES.bps, 'Derived: 284.44m ÷ 1,890,180 km²')}
@@ -132,18 +163,19 @@ export function economy() {
   <p class="crumb"><a href="#/">← Home</a></p>
   <h1>Economy</h1>
   <p class="lede">Southeast Asia's largest economy: Rp23,821 trillion of output in 2025, growing 5.11% — and faster still in the first nine months of 2026.</p>
-  <div class="kpi-grid">
+  <div class="kpi-grid four">
     ${fig('Rp23,821.1tn', 'current prices', 'GDP, 2025', SOURCES.bpsBrs, 'Released 5 Feb 2026')}
     ${fig('5.11%', 'a year', 'Growth, 2025', SOURCES.bpsBrs, '2024: 5.03%')}
     ${fig('Rp83.7m', 'per person', 'GDP per capita, 2025', SOURCES.bpsBrs, 'US$5,083.4')}
     ${fig('5.47%', 'y-on-y', 'Growth, Q3 2026', SOURCES.bpsBrs, 'Released 5 Nov 2026')}
   </div>
   <div class="chart-row">
-    ${chartCard('Economic growth, 2021–2025 (% a year)', barChart({ series: ECONOMY.growthSeries, decimals: 2, unit: '%', title: 'GDP growth 2021 to 2025' }), ECONOMY.growthSeriesSource + '.')}
+    ${chartCard('Economic growth, 2015–2025 (% a year)', barChart({ series: ECONOMY.growthSeries, decimals: 2, unit: '%', title: 'GDP growth 2015 to 2025' }), ECONOMY.growthSeriesSource + '. 2020 is the pandemic contraction (−2.07%); every other year since 2015 grew between 3.7% and 5.3%.')}
     ${chartCard('Growth by quarter, 2026 (% y-on-y)', barChart({ series: ECONOMY.quarterly2026, decimals: 2, unit: '%', color: '#b3541e', title: 'Quarterly growth 2026' }), ECONOMY.quarterlySource + '.')}
   </div>
   ${section('What the economy is made of — 2025', `<p>Five industries make up ${ECONOMY.sectorsTop5Share}% of GDP. Manufacturing alone is nearly a fifth.</p>
-  <div class="chart-card">${hbarChart({ series: ECONOMY.sectors.map((s) => ({ name: s.name, value: s.value })), decimals: 2, title: 'Share of GDP by industry, 2025' })}<p class="caption">${esc(ECONOMY.sectorsSource)} · Share of GDP at current prices. Amounts: manufacturing Rp${num(ECONOMY.sectors[0].amount, 1)}tn; trade Rp${num(ECONOMY.sectors[1].amount, 1)}tn; agriculture Rp${num(ECONOMY.sectors[2].amount, 1)}tn; construction Rp${num(ECONOMY.sectors[3].amount, 1)}tn; mining Rp${num(ECONOMY.sectors[4].amount, 1)}tn.</p></div>
+  <div class="chart-card">${donutChart({ series: [...ECONOMY.sectors.map((s) => ({ name: s.name, value: s.value })), { name: 'All other industries', value: 100 - ECONOMY.sectorsTop5Share }], colors: ['#0b6b5e', '#b3541e', '#d9a400', '#2e86ab', '#7d5ba6', '#9aa5a1'], centre: `${num(ECONOMY.sectorsTop5Share)}%`, title: 'Share of GDP by industry, 2025' })}<p class="caption">${esc(ECONOMY.sectorsSource)} · Share of GDP at current prices. The five largest industries are shown in colour; everything else — 36.08% of the economy — is the grey slice.</p></div>
+  <div class="chart-card">${hbarChart({ series: ECONOMY.sectors.map((s) => ({ name: s.name, value: s.value })), decimals: 2, title: 'Share of GDP by industry, 2025' })}<p class="caption">${esc(ECONOMY.sectorsSource)} · Amounts: manufacturing Rp${num(ECONOMY.sectors[0].amount, 1)}tn; trade Rp${num(ECONOMY.sectors[1].amount, 1)}tn; agriculture Rp${num(ECONOMY.sectors[2].amount, 1)}tn; construction Rp${num(ECONOMY.sectors[3].amount, 1)}tn; mining Rp${num(ECONOMY.sectors[4].amount, 1)}tn.</p></div>
   <table class="data-table"><thead><tr><th>Industry</th><th>Share of GDP</th><th>Growth, 2025</th></tr></thead><tbody>
   ${ECONOMY.sectors.map((s) => `<tr><td>${esc(s.name)}</td><td>${num(s.value)}%</td><td>${s.growth === null ? '—' : `${s.growth > 0 ? '+' : ''}${num(s.growth)}%`}</td></tr>`).join('')}
   </tbody></table>`)}
@@ -164,14 +196,14 @@ export function labour() {
   <p class="crumb"><a href="#/">← Home</a></p>
   <h1>Labour</h1>
   <p class="lede">155.37 million people in the labour force in August 2026. Unemployment is at its lowest in years — but nearly six in ten workers are informal.</p>
-  <div class="kpi-grid">
+  <div class="kpi-grid four">
     ${fig('4.75%', 'open unemployment', 'TPT, Aug 2026', SOURCES.bpsBrs, 'Aug 2025: 4.85%')}
     ${fig('155.37m', 'people', 'Labour force, Aug 2026', SOURCES.bpsSakernas, 'TPAK 70.33%')}
     ${fig('147.99m', 'people', 'Employed, Aug 2026', SOURCES.bpsSakernas, '+1.44m on Aug 2025')}
     ${fig('Rp3.42m', 'a month', 'Average wage, Aug 2026', SOURCES.bpsSakernas, 'Labourers’ average wage')}
   </div>
   <div class="chart-row">
-    ${chartCard('Open unemployment rate, August each year (%)', lineChart({ series: LABOUR.tptSeries, decimals: 2, unit: '%', title: 'Unemployment rate 2022 to 2026' }), LABOUR.tptSeriesSource + '.')}
+    ${chartCard('Open unemployment rate, August each year, 2015–2026 (%)', lineChart({ series: LABOUR.tptSeries, decimals: 2, unit: '%', title: 'Unemployment rate 2015 to 2026' }), LABOUR.tptSeriesSource + '. The pandemic spike to 7.07% in 2020, then a steady fall to 4.75% — the lowest August reading in the series.')}
     ${chartCard('Where people work — share of the employed, Aug 2026 (%)', hbarChart({ series: LABOUR.bySector, decimals: 2, title: 'Employment by sector' }), LABOUR.bySectorSource + '. Agriculture still employs more people than any other sector.')}
   </div>
   ${section('Formal or informal?', `<ul class="bullets">
@@ -190,14 +222,17 @@ export function prices() {
   <p class="crumb"><a href="#/">← Home</a></p>
   <h1>Prices</h1>
   <p class="lede">Inflation was 3.23% in October 2026 — inside Bank Indonesia's 2.5% ± 1% target corridor, but the highest October reading in five years. Food did most of the pushing.</p>
-  <div class="kpi-grid">
+  <div class="kpi-grid four">
     ${fig('3.23%', 'y-on-y', 'Inflation, Oct 2026', SOURCES.bpsBrs, 'Released 2 Nov 2026')}
     ${fig('0.22%', 'm-to-m', 'Monthly, Oct 2026', SOURCES.bpsBrs, 'Sep 2026: 0.30%')}
     ${fig('112.56', 'index', 'Consumer Price Index, Oct 2026', SOURCES.bpsBrs, 'Sep 2026: 112.31')}
     ${fig('2.40%', 'year-to-date', 'Calendar-year, Oct 2026', SOURCES.bpsBrs, 'Full-year 2025: 2.92%')}
   </div>
   <div class="chart-row">
-    ${chartCard('Calendar-year inflation, 2021–2025 (%)', barChart({ series: PRICES.calendarSeries, decimals: 2, unit: '%', title: 'Calendar-year inflation' }), PRICES.calendarSource + '. 2022 spiked to 5.51% on administered fuel-price rises; 2024 fell to 1.57%.')}
+    ${chartCard('Calendar-year inflation, 2015–2025 (%)', barChart({ series: PRICES.calendarSeries, decimals: 2, unit: '%', title: 'Calendar-year inflation' }), PRICES.calendarSource + '. 2022 spiked to 5.51% on administered fuel-price rises; 2024 fell to 1.57%, the lowest since 1958.')}
+    <div class="chart-card"><h3>Inflation against its target</h3>
+    ${lineChart({ series: PRICES.calendarSeries, decimals: 2, unit: '%', color: '#b3541e', title: 'Calendar-year inflation with Bank Indonesia target band', band: { lo: 1.5, hi: 3.5, label: 'BI target 1.5–3.5%' } })}
+    <p class="caption">${esc(PRICES.calendarSource)}. The gold band is Bank Indonesia's 2.5% ± 1% target corridor: inflation stayed inside it in every year except 2017 (3.61%) and 2022 (5.51%).</p></div>
     <div class="chart-card"><h3>What drove October 2026?</h3>
     <ul class="bullets">
       <li><strong>Food, beverages &amp; tobacco: +4.82% y-on-y</strong> — the biggest contributor, 1.40 percentage points of the 3.23%.</li>
@@ -222,14 +257,14 @@ export function trade() {
   <p class="crumb"><a href="#/">← Home</a></p>
   <h1>Trade</h1>
   <p class="lede">Indonesia has run a trade surplus every month since mid-2020. In September 2026 it was US$3.36bn — but imports are now growing far faster than exports.</p>
-  <div class="kpi-grid">
+  <div class="kpi-grid four">
     ${fig('US$27.59bn', 'exports', 'September 2026', SOURCES.bpsBrs, '+11.87% y-on-y')}
     ${fig('US$24.23bn', 'imports', 'September 2026', SOURCES.bpsBrs, '+18.41% y-on-y')}
     ${fig('US$3.36bn', 'surplus', 'September 2026', SOURCES.bpsBrs, 'Non-oil +US$5.67bn; oil −US$2.31bn')}
     ${fig('US$282.91bn', 'exports', 'Full year 2025', SOURCES.bpsBrs, '+6.15% on 2024; surplus US$41.05bn')}
   </div>
   <div class="chart-row">
-    ${chartCard('Exports, 2021–2025 (US$ billion)', barChart({ series: TRADE.exportsSeries, decimals: 0, unit: '', color: '#0b6b5e', title: 'Exports 2021 to 2025' }), TRADE.exportsSeriesSource + '. 2022 was the commodity-price peak.')}
+    ${chartCard('Exports, 2015–2025 (US$ billion)', barChart({ series: TRADE.exportsSeries, decimals: 0, unit: '', color: '#0b6b5e', title: 'Exports 2015 to 2025' }), TRADE.exportsSeriesSource + '. Exports nearly doubled over the decade; 2022 was the commodity-price peak.')}
     <div class="chart-card"><h3>January – September 2026</h3>
     <ul class="bullets">
       <li><strong>Exports US$221.23bn</strong> (+5.58% y-on-y) · <strong>imports US$210.63bn</strong> (+19.67%).</li>
@@ -250,7 +285,7 @@ export function health() {
   <p class="crumb"><a href="#/">← Home</a></p>
   <h1>Health</h1>
   <p class="lede">Indonesians live longer than ever: a baby born in 2025 can expect 74.47 years. The Human Development Index reached 75.90 — the "High" category.</p>
-  <div class="kpi-grid">
+  <div class="kpi-grid four">
     ${fig('75.90', 'index', 'Human Development Index, 2025', SOURCES.bpsBrs, '2024: 75.02 · 2020: 72.81')}
     ${fig('74.47', 'years', 'Life expectancy at birth, 2025', SOURCES.bpsBrs, '+0.32 years on 2024')}
     ${fig('Rp12.80m', 'a year', 'Adjusted real spending per person, 2025', SOURCES.bpsBrs, '+Rp461,000 on 2024')}
@@ -276,7 +311,7 @@ export function education() {
   <p class="crumb"><a href="#/">← Home</a></p>
   <h1>Education</h1>
   <p class="lede">A seven-year-old today can expect 13.30 years of schooling — into the second year of university. But adults aged 25 and over average only 9.07 years: the system is improving faster than the stock of schooling it inherited.</p>
-  <div class="kpi-grid">
+  <div class="kpi-grid four">
     ${fig('13.30', 'years', 'Expected schooling, 2025', SOURCES.bpsBrs, 'Age 7+ · 2024: 13.21')}
     ${fig('9.07', 'years', 'Mean schooling, 2025', SOURCES.bpsBrs, 'Age 25+ · 2024: 8.85')}
     ${fig('+0.22', 'years', 'Mean-schooling gain, 2025', SOURCES.bpsBrs, 'The fastest yearly gain since 2020')}
@@ -301,19 +336,57 @@ export function tourism() {
   <p class="crumb"><a href="#/">← Home</a></p>
   <h1>Tourism</h1>
   <p class="lede">15.39 million foreign visitors in 2025 — up 10.80% on 2024 and the most in six years. Indonesians themselves made 1.20 billion domestic trips.</p>
-  <div class="kpi-grid">
+  <div class="kpi-grid four">
     ${fig('15.39m', 'visits', 'Foreign visitors, 2025', SOURCES.bpsBrs, 'Released 2 Feb 2026')}
     ${fig('1.41m', 'visits', 'December 2025 alone', SOURCES.bpsBrs, '+14.43% y-on-y')}
     ${fig('US$1,267', 'per visit', 'Average visitor spending, 2025', SOURCES.bpsBrs, 'Accommodation 38.34%')}
     ${fig('1.20bn', 'trips', 'Domestic tourist trips, 2025', SOURCES.bpsBrs, '+17.55% on 2024')}
   </div>
   <div class="chart-row">
-    ${chartCard('Foreign visitor arrivals, 2021–2025 (millions)', barChart({ series: TOURISM.visitorsSeries, decimals: 2, unit: 'm', title: 'Foreign visitors 2021 to 2025' }), TOURISM.visitorsSource + '. The post-pandemic recovery, year by year.')}
+    ${chartCard('Foreign visitor arrivals, 2019–2025 (millions)', barChart({ series: TOURISM.visitorsSeries, decimals: 2, unit: 'm', title: 'Foreign visitors 2019 to 2025' }), TOURISM.visitorsSource + '. The pandemic collapse and the climb back — 2025 is still just below the 2019 record of 16.11m.')}
     ${chartCard('Where visitors came from, 2025 (% of arrivals)', hbarChart({ series: TOURISM.origins, decimals: 1, title: 'Visitor origins 2025' }), TOURISM.originsSource + '. ASEAN supplied 41.3% of all visitors.')}
   </div>
   ${section('The year in months', `<p>Arrivals dipped early in 2025 — 1.16m in January, 1.02m in February, 0.98m in March — then climbed to 1.51m in August, eased through the autumn (1.39m in September, 1.20m in November) and closed at 1.41m in December. The December peak is the usual year-end holiday pattern.</p>
   <p class="caption">Source: ${esc(SOURCES.bpsBrs)}, BRS No. 13/02/Th. XXIX (2 Feb 2026).</p>`)}
   ${srcBox(SOURCES.bpsBrs + ' — Perkembangan Pariwisata, December 2025 (released 2 Feb 2026).')}`;
+}
+
+// --- Compare: Indonesia vs ASEAN -------------------------------------------
+export function compare() {
+  const idn = COMPARE.countries.find((c) => c.name === 'Indonesia');
+  const byGdp = [...COMPARE.countries].sort((a, b) => b.gdp - a.gdp);
+  const indexed = [...COMPARE.countries]
+    .map((c) => ({ name: c.name, value: Math.round((c.gdpPc / idn.gdpPc) * 100) }))
+    .sort((a, b) => b.value - a.value);
+  const rows = COMPARE.countries
+    .map((c) => `<tr${c.name === 'Indonesia' ? ' class="hl"' : ''}><td>${esc(c.name)}</td><td data-sort="${c.pop}">${num(c.pop)}m</td><td data-sort="${c.gdp}">US$${num(c.gdp, 0)}bn</td><td data-sort="${c.gdpPc}">US$${num(c.gdpPc, 0)}</td><td data-sort="${c.gdpPppPc}">US$${num(c.gdpPppPc, 0)}</td></tr>`)
+    .join('');
+  return `
+  <p class="crumb"><a href="#/">← Home</a></p>
+  <h1>Indonesia next to its neighbours</h1>
+  <p class="lede">Indonesia is ASEAN's biggest economy and its most populous country — by a wide margin. Per person, though, it sits in the middle of its neighbourhood: ahead of Vietnam and the Philippines, behind Thailand and Malaysia, and a long way behind Singapore.</p>
+  <div class="kpi-grid four">
+    ${fig('US$1,430bn', 'nominal GDP', 'Biggest economy in ASEAN, 2025', 'IMF, WEO Oct 2025', '2.5× Singapore, the next largest')}
+    ${fig('284.42m', 'people', 'Largest population in ASEAN, 2025', 'IMF, WEO Oct 2025', '41% of ASEAN’s 690m people')}
+    ${fig('US$5,030', 'per person', 'GDP per capita, 2025', 'IMF, WEO Oct 2025', '5th of these six; BPS puts it at US$5,083')}
+    ${fig('US$17,610', 'per person (PPP)', 'GDP per capita, PPP, 2025', 'IMF, WEO Oct 2025', 'Just ahead of Vietnam (US$17,484)')}
+  </div>
+  <div class="chart-row">
+    ${chartCard('Total GDP, 2025 (US$ billion)', hbarChart({ series: byGdp.map((c) => ({ name: c.name, value: c.gdp })), decimals: 0, unit: '', maxValue: 1500, title: 'GDP 2025, US$ billion' }), COMPARE.source + '. Indonesia’s economy is larger than Thailand’s and Singapore’s combined.')}
+    ${chartCard('GDP per person vs Indonesia (= 100), 2025', hbarChart({ series: indexed, decimals: 0, unit: '', title: 'GDP per capita, Indonesia = 100' }), 'Nominal GDP per capita, indexed to Indonesia = 100. Singapore earns about 18× more per person; Malaysia 2.6×.')}
+  </div>
+  ${section('The six economies, side by side', `<p>Click a column heading to sort. All figures are IMF World Economic Outlook, October 2025 estimates for 2025; the Indonesia row is highlighted.</p>
+  <table class="data-table sortable" id="compare-table"><thead><tr>
+    <th data-key="name">Country ↕</th><th data-key="pop">Population ↕</th><th data-key="gdp">GDP ↕</th><th data-key="gdppc">GDP per person ↕</th><th data-key="ppp">GDP per person (PPP) ↕</th>
+  </tr></thead><tbody>${rows}</tbody></table>
+  <p class="caption">Source: ${esc(COMPARE.source)}. ASEAN total: ${num(COMPARE.aseanPop)}m people, US$${num(COMPARE.aseanGdp, 2)}bn GDP.</p>`)}
+  ${section('How to read this', `<ul class="bullets">
+    <li><strong>Nominal GDP per person</strong> uses market exchange rates — the number that matters for trade and debt. <strong>PPP</strong> adjusts for what money buys at home: on PPP, Indonesia and Vietnam look nearly equal, though Vietnam trails on nominal.</li>
+    <li><strong>Singapore is a city-state</strong> of 5.98m people built on finance and shipping; its per-person figures will always tower over archipelago economies. The fair comparison for Indonesia is Thailand, Malaysia, Vietnam and the Philippines.</li>
+    <li><strong>These are IMF estimates</strong> from October 2025, so all six countries are on the same vintage. National releases differ slightly: BPS puts Indonesia's 2025 GDP per capita at US$5,083.4, against the IMF's US$5,030.</li>
+    <li><strong>Size is not prosperity:</strong> Indonesia's economy is 2.6× Thailand's, but its income per person is about two-thirds of Thailand's — because it is spread across four times as many people.</li>
+  </ul>`)}
+  ${srcBox(COMPARE.source + '; BPS, GDP release 5 Feb 2026 (Indonesia GDP per capita US$5,083.4).')}`;
 }
 
 // --- Regions ------------------------------------------------------------------
@@ -369,7 +442,10 @@ export function sources() {
     <li>Poverty, March 2025 — BPS / Susenas, released 25 Jul 2025.</li>
     <li>Statistik Indonesia 2026 (yearbook) — BPS, published 27 Feb 2026.</li>
     <li>Pendapatan Nasional Indonesia 2021–2025 — BPS, published 22 Jun 2026.</li>
+    <li>World Economic Outlook, October 2025 — IMF (ASEAN comparison figures: GDP, population, GDP per capita, PPP).</li>
+    <li>World Development Indicators — World Bank (cross-check for the 2015–2020 GDP growth and trade series).</li>
   </ul>`)}
+  ${section('Comparisons', `<p>The <a href="#/compare">Compare page</a> uses one IMF vintage (World Economic Outlook, October 2025) for all six countries, so the figures are comparable. Where a national release differs — BPS puts Indonesia's 2025 GDP per capita at US$5,083.4, the IMF at US$5,030 — the page says so next to the figure.</p>`)}
   ${section('Words that need explaining', `<ul class="bullets">
     <li><strong>y-on-y</strong> — compared with the same period a year earlier. <strong>m-to-m</strong> — compared with last month. <strong>c-to-c</strong> — cumulative, this year so far against the same stretch last year.</li>
     <li><strong>TPT (Tingkat Pengangguran Terbuka)</strong> — the open unemployment rate: unemployed people as a share of the labour force.</li>
@@ -410,6 +486,7 @@ export const ROUTES = {
   '': home,
   population,
   economy,
+  compare,
   labour,
   prices,
   trade,
@@ -426,6 +503,7 @@ export const TITLES = {
   '': 'NusaData — Indonesia in Numbers',
   population: 'Population | NusaData',
   economy: 'Economy | NusaData',
+  compare: 'Indonesia vs ASEAN | NusaData',
   labour: 'Labour | NusaData',
   prices: 'Prices | NusaData',
   trade: 'Trade | NusaData',

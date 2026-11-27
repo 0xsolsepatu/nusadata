@@ -113,7 +113,7 @@ for (const shot of SHOTS) {
 
 // --- Interaction test: every route, search, table sort -------------------
 await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 720, deviceScaleFactor: 1, mobile: false });
-const routes = ['', 'population', 'economy', 'labour', 'prices', 'trade', 'health', 'education', 'tourism', 'regions', 'releases', 'sources', 'about', 'nope'];
+const routes = ['', 'population', 'economy', 'compare', 'labour', 'prices', 'trade', 'health', 'education', 'tourism', 'regions', 'releases', 'sources', 'about', 'nope'];
 for (const r of routes) {
   await navigate(`http://127.0.0.1:${PORT}/index.html#/${r}`, 1280, 720, false);
   const ready = await waitForShotReady();

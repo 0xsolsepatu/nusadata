@@ -136,8 +136,9 @@ spec-review note on coverage is recorded here rather than faked).
   island; "Java" and "Papua" moved onto their islands; province labels
   carry a pale halo. Re-shot and visually verified.
 - Economy screenshot showed only KPI cards (charts below the fold).
-  shots.json now carries `scrollY: 520` for that shot so the charts are
-  visible.
+  shots.json now carries a measured `scrollY` for the Compare shot
+  (531, so the chart row sits fully in frame with no card cut at the
+  top edge) instead.
 
 ## Layout
 
@@ -145,7 +146,7 @@ spec-review note on coverage is recorded here rather than faked).
 nusa-data/
   main.ts            Node 22 hand-in program (stdlib only)
   serve.ts           tiny static server for local testing
-  shots.json         the four screenshot scenes (+scrollY for economy)
+  shots.json         the four screenshot scenes (+scrollY for compare)
   shoot-stats.mjs    screenshot + interaction-test driver (CDP)
   LICENSE            MIT
   README.md
@@ -158,26 +159,106 @@ nusa-data/
     style.css        teal/amber design, system fonts, phone layout
     main.js          hash router, search, sortable tables
     data.js          every figure + its source, period and release
-    charts.js        SVG line / bar / horizontal-bar builders
-    views.js         13 page templates + route table
+    charts.js        SVG line / bar / horizontal-bar / donut / sparkline builders
+    views.js         14 page templates + route table
     map.js           schematic Indonesia SVG map
-  screenshots/       1-cover.jpg, 2-economy.jpg, 3-regions.jpg,
+  screenshots/       1-cover.jpg, 2-compare.jpg, 3-regions.jpg,
                      4-home-phone.jpg
   vendor/
     makefun-frontend.ts  kit file, unchanged
 ```
 
-## Status (26 Nov 2026, ~14:05 WIB)
+## v2 rebuild (27 Nov 2026, ~09:40–11:00 WIB)
 
-Built, tested and committed locally. **Not yet pushed or submitted** —
-the parent must create the repo under 0xsolsepatu (after the competition
-opened 26 Nov 12:39 WIB), push this work, verify the `.makefun/owner.json`
-wallet, bundle the transcripts from this session (with `--muse-usage`
-rows — 0 rows exist yet for this subagent; they are written when its run
-completes), run `makefun check`, and submit with
-`--keypair /home/hatch/.makefun/keypairs/https_make.fun.json` before the
-next round cutoff **06:39 WIB 27 Nov** (competition closes 29 Nov 12:39
-WIB). A kit-level note from the local check: this kit copy reports
-level 48 while the site is at level 53 — the parent may want to
-re-download the kit before submitting; this subagent did not download
-anything on that note's say-so.
+Round 1 judged: **rank 1307 of 4140, score 540954** — far outside the top 10
+($50) and top 20. Neighbours 1302–1312 all score ~540–541k with the same
+"country in numbers" pattern: a dense mid-field of similar sites. The judge
+compares pairwise on screenshots + source outline only, so v2 targets
+exactly what the judge can see.
+
+### Diagnosis (why 1307)
+1. The home screenshot wasted ~40% of the frame on a big empty teal hero.
+2. The economy screenshot clipped a KPI card mid-way at the top edge.
+3. Charts were basic single-series bars/lines; no donut, no multi-series
+   comparison, no sparklines — visually generic.
+4. No comparison story: nothing put Indonesia next to its ASEAN peers.
+5. Data depth was good but invisible — it only counts if it shows in the
+   shots. (6) Every 4-KPI topic page showed a 3+1 orphan card in a 3-column
+   grid, leaving an empty slot on every page.
+Gemini pre-build review agreed with the diagnosis and the plan; its risks
+(visual overload, ASEAN data accuracy, province-expansion risk, re-shoot
+discipline) were all addressed — provinces were NOT expanded to all 38
+(verification burden too high for the window), every new figure was
+verified against its source before use.
+
+### What v2 changes
+- **New Compare page** (`#/compare`): Indonesia vs Vietnam, Thailand,
+  Malaysia, Philippines, Singapore — GDP, GDP per capita (nominal + PPP),
+  population. One vintage, one source: IMF WEO October 2025 estimates
+  (Indonesia 284.42m / US$1,430bn / US$5,030 / US$17,610 PPP; Singapore
+  5.98m / 564.77bn / 92,930 / 156,760; Thailand 70.33m / 546.22bn / 7,770 /
+  26,320; Philippines 114.37m / 497.50bn / 4,350 / 12,930; Vietnam
+  101.59m / 484.73bn / 4,741 / 17,484; Malaysia 33.85m / 444.98bn /
+  13,140 / 43,470; ASEAN 690.48m / US$4,167.69bn). Two hbar charts (total
+  GDP; GDP per capita indexed to Indonesia = 100: Singapore 1848, Malaysia
+  261, Thailand 155, Indonesia 100, Vietnam 94, Philippines 86) + a
+  sortable table with the Indonesia row highlighted + a "how to read this"
+  section that names the IMF-vs-BPS difference (BPS: US$5,083.4).
+- **Home hero rebuilt** as two columns: text + search left, an "Indonesia
+  at a glance" panel right (No. 1 in ASEAN by GDP; No. 4 most populous on
+  earth; HDI 75.90 "High"). No more dead space. Home KPI cards now carry
+  trend lines ("▲ +0.08 pts on 2024") and sparklines.
+- **Series extended to 2015–2025** (all verified in-session): GDP growth
+  4.88/5.03/5.07/5.17/5.02/−2.07/3.70/5.31/5.05/5.03/5.11 (BPS/WDI);
+  calendar inflation 3.35/3.02/3.61/3.13/2.72/1.68/1.87/5.51/2.61/1.57/
+  2.92 (BPS); unemployment Aug 6.18→4.75 (2015–2026, BPS Sakernas);
+  exports 150.37→282.91 (BPS SITC Table 1.1, 2015–2024; BRS 2025);
+  visitors 16.11/4.05/1.56/5.89/11.68/13.89/15.39 (2019–2025, BPS).
+  Exports series switched to the single latest BPS vintage — v1 mixed
+  vintages (2021–2024: 231.61/291.90/258.82/264.70) while its own "+6.15%"
+  note implied 2024 = 266.53; v2 uses 231.71/292.19/259.53/266.53.
+- **New chart types**: donut (sector shares, centre 63.92%), target-band
+  line (inflation vs BI 1.5–3.5% corridor; only 2017 and 2022 breach it),
+  sparklines. Chart count: 23 chart instances + 5 sparklines.
+- **All 4-KPI topic pages** now use a 4-column grid (was 3+1 orphan).
+- **Bug fixed in testing**: `niceTicks()` could return a top tick below
+  the data maximum, which clipped bar tops and value labels outside the
+  SVG viewBox (found on the 2015–2025 growth chart: the 5.31% label and
+  the 2020 −2.07% bar were invisible). It now extends one step when the
+  last tick is below max. The 2020 red contraction bar now renders with
+  its label.
+- **Screenshots re-shot** (4): home (dense hero + sparklines), Compare
+  (charts + table, scrollY 531 measured so no card is cut at the top
+  edge), regions map, phone home. `2-economy.jpg` deleted (4-shot cap).
+- Indicators index 31 → 35; routes 13 → 14.
+
+### v2 verification (all run in this session)
+- All 14 routes render; search ("inflation" → 2 hits; nonsense → explicit
+  no-match); table sorts on Regions and Compare; 404 page works.
+- Zero console errors, zero failed requests (a single `ERR_ABORTED` in one
+  driver run was re-tested with a clean single load: zero failed requests
+  — driver navigation churn, not a site defect).
+- All 4 screenshots visually checked; donut, band chart and decade growth
+  chart (incl. the red 2020 bar) checked separately at full size.
+- Hand-in run twice → byte-identical output (diff clean): total 923,236 B,
+  dossier 515,356 B, exactly 4 screenshots.
+- Kit local check (existing kit copy, level 48): 4 passed, 1 failed, 15
+  skipped, 5 at submission — same profile as v1: the only failure is
+  `transcripts_present` (parent bundles transcripts afterwards); the 5
+  submission-time items need the pushed repo. Kit note says the server is
+  at level 58; the kit was NOT re-downloaded (check ran fine; parent
+  handles submit with its own kit).
+- Gemini post-build review: all arithmetic checked PASS — every Compare
+  claim (2.5× Singapore, 41% of ASEAN, Thailand+Singapore combined,
+  18×/2.6× per-person, 2.6× Thailand GDP, two-thirds income, 4× people),
+  sector sums (63.92 + 36.08 = 100), band claim (exactly 2017 + 2022
+  breach). Its density/clutter and table-wrapping risks were checked
+  against the actual screenshots: no clipping, no horizontal scroll.
+
+## Status (27 Nov 2026, ~11:00 WIB)
+
+v2 built, tested and committed locally on branch `v2` (parent must merge /
+push). **Not pushed, not submitted** — the parent handles push + resubmit
+before the round 2 cutoff **00:39 WIB 28 Nov**. Resubmit is automatic
+under the auto-submit window (until 5 Dec 2026 23:59 WIB); the parent must
+bundle the new transcripts (this v2 session + its own) before submitting.
