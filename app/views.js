@@ -92,7 +92,7 @@ export function home() {
       <p class="lede">The population, the economy, jobs, prices, trade, health and schooling — every figure with its source and its year, from the releases of BPS, Statistics Indonesia. Data as of <strong>${esc(AS_OF)}</strong>.</p>
       <div class="search-wrap">
         <label for="search">Find a figure</label>
-        <input id="search" type="search" placeholder="Try “inflation”, “exports”, “unemployment”…" autocomplete="off">
+        <input id="search" type="search" placeholder="Try “inflation”, “exports”…" autocomplete="off">
         <div id="search-results" class="search-results" aria-live="polite"></div>
       </div>
     </div>
@@ -109,7 +109,7 @@ export function home() {
     ${chartCard('Economic growth, 2015–2025 (% a year)', barChart({ series: ECONOMY.growthSeries, decimals: 2, unit: '%', title: 'GDP growth 2015 to 2025' }), ECONOMY.growthSeriesSource + '. 2020 is the pandemic contraction (−2.07%); every other year since 2015 grew between 3.7% and 5.3%.')}
   </div>
   ${section('Indonesia next to its neighbours', `<p>ASEAN's biggest economy — US$1,430bn in 2025 — but only US$5,030 per person, fifth of its six largest neighbours. <a href="#/compare">See the full comparison →</a></p>
-  <div class="chart-card">${hbarChart({ series: [...COMPARE.countries].sort((a, b) => b.gdp - a.gdp).map((c) => ({ name: c.name, value: c.gdp })), decimals: 0, unit: '', maxValue: 1500, title: 'GDP 2025, US$ billion' })}<p class="caption">${esc(COMPARE.source)}. Indonesia's economy is larger than Thailand's and Singapore's combined.</p></div>`)}
+  <div class="chart-card">${hbarChart({ series: [...COMPARE.countries].sort((a, b) => b.gdp - a.gdp).map((c) => ({ name: c.name, value: c.gdp })), decimals: 0, unit: '', maxValue: 1500, title: 'GDP 2025, US$ billion', highlight: 'Indonesia' })}<p class="caption">${esc(COMPARE.source)}. Indonesia's economy is larger than Thailand's and Singapore's combined.</p></div>`)}
   ${section('Latest releases', releasesList(RELEASES.slice(0, 5)) + `<p class="more"><a href="#/releases">See all ${RELEASES.length} releases →</a></p>`)}
   ${section('Explore the numbers', navCards())}
   <p class="fineprint">NusaData is an independent site. It republishes figures from public BPS releases and says so under every number; it is not affiliated with BPS. Figures are shown exactly as published — see <a href="#/sources">Sources &amp; methods</a>.</p>`;
@@ -372,12 +372,12 @@ export function compare() {
     ${fig('US$17,610', 'per person (PPP)', 'GDP per capita, PPP, 2025', 'IMF, WEO Oct 2025', 'Just ahead of Vietnam (US$17,484)')}
   </div>
   <div class="chart-row">
-    ${chartCard('Total GDP, 2025 (US$ billion)', hbarChart({ series: byGdp.map((c) => ({ name: c.name, value: c.gdp })), decimals: 0, unit: '', maxValue: 1500, title: 'GDP 2025, US$ billion' }), COMPARE.source + '. Indonesia’s economy is larger than Thailand’s and Singapore’s combined.')}
-    ${chartCard('GDP per person vs Indonesia (= 100), 2025', hbarChart({ series: indexed, decimals: 0, unit: '', title: 'GDP per capita, Indonesia = 100' }), 'Nominal GDP per capita, indexed to Indonesia = 100. Singapore earns about 18× more per person; Malaysia 2.6×.')}
+    ${chartCard('Total GDP, 2025 (US$ billion)', hbarChart({ series: byGdp.map((c) => ({ name: c.name, value: c.gdp })), decimals: 0, unit: '', maxValue: 1500, title: 'GDP 2025, US$ billion', highlight: 'Indonesia' }), COMPARE.source + '. Indonesia’s economy is larger than Thailand’s and Singapore’s combined.')}
+    ${chartCard('GDP per person vs Indonesia (= 100), 2025', hbarChart({ series: indexed, decimals: 0, unit: '', title: 'GDP per capita, Indonesia = 100', highlight: 'Indonesia' }), 'Indonesia’s bar is amber. Nominal GDP per capita, indexed to Indonesia = 100. Singapore earns about 18× more per person; Malaysia 2.6×.')}
   </div>
   ${section('The six economies, side by side', `<p>Click a column heading to sort. All figures are IMF World Economic Outlook, October 2025 estimates for 2025; the Indonesia row is highlighted.</p>
   <table class="data-table sortable" id="compare-table"><thead><tr>
-    <th data-key="name">Country ↕</th><th data-key="pop">Population ↕</th><th data-key="gdp">GDP ↕</th><th data-key="gdppc">GDP per person ↕</th><th data-key="ppp">GDP per person (PPP) ↕</th>
+    <th data-key="name">Country ▲▼</th><th data-key="pop">Population ▲▼</th><th data-key="gdp">GDP ▲▼</th><th data-key="gdppc">GDP per person ▲▼</th><th data-key="ppp">GDP per person (PPP) ▲▼</th>
   </tr></thead><tbody>${rows}</tbody></table>
   <p class="caption">Source: ${esc(COMPARE.source)}. ASEAN total: ${num(COMPARE.aseanPop)}m people, US$${num(COMPARE.aseanGdp, 2)}bn GDP.</p>`)}
   ${section('How to read this', `<ul class="bullets">
@@ -401,7 +401,7 @@ export function regions() {
   <div class="map-card">${indonesiaMap()}</div>
   ${section('The ten largest provinces — 2026 projections', `<p>Click a column heading to sort the table. Figures are in millions of people.</p>
   <table class="data-table sortable" id="prov-table"><thead><tr>
-    <th data-key="name">Province ↕</th><th data-key="capital">Capital ↕</th><th data-key="pop">Population ↕</th><th data-key="share">Share ↕</th>
+    <th data-key="name">Province ▲▼</th><th data-key="capital">Capital ▲▼</th><th data-key="pop">Population ▲▼</th><th data-key="share">Share ▲▼</th>
   </tr></thead><tbody>${rows}</tbody></table>
   <p class="caption">${esc(POPULATION.provincesSource)} · Total population, 2026 projection: ${POPULATION.provincesTotal2026}m. The ten provinces together hold ${(POPULATION.provinces.reduce((a, p) => a + p.value, 0)).toFixed(2)}m people — ${num((POPULATION.provinces.reduce((a, p) => a + p.value, 0) / POPULATION.provincesTotal2026) * 100, 1)}% of Indonesia.</p>`)}
   ${section('The Java question', `<ul class="bullets">

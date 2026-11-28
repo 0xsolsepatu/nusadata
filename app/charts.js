@@ -164,7 +164,10 @@ export function donutChart({ series, colors, title = '', centre = '' }) {
 
 // Horizontal bars: a label on the left, a bar, the value on the right.
 // Used for sector shares, island shares, provinces and origins.
-export function hbarChart({ series, color = '#0b6b5e', unit = '%', decimals = 2, maxValue = null, title = '' }) {
+// `highlight` names the one bar to paint in `highlightColor` (and bold its
+// label) so the reader's eye lands on it first — used on the Compare page
+// and the home teaser, where Indonesia is the subject among its peers.
+export function hbarChart({ series, color = '#0b6b5e', unit = '%', decimals = 2, maxValue = null, title = '', highlight = null, highlightColor = '#b3541e' }) {
   const rowH = 34;
   const width = 640;
   const labelW = 218;
@@ -176,8 +179,9 @@ export function hbarChart({ series, color = '#0b6b5e', unit = '%', decimals = 2,
     .map((p, i) => {
       const y = 8 + i * rowH;
       const w = Math.max(2, (p.value / max) * barW);
-      return `<text x="0" y="${y + 15}" font-size="13" fill="#1d2b29">${escape(p.name)}</text>
-      <rect x="${labelW}" y="${y + 2}" width="${w.toFixed(1)}" height="18" rx="3" fill="${color}"/>
+      const isHl = highlight !== null && p.name === highlight;
+      return `<text x="0" y="${y + 15}" font-size="13" font-weight="${isHl ? '800' : '400'}" fill="#1d2b29">${escape(p.name)}</text>
+      <rect x="${labelW}" y="${y + 2}" width="${w.toFixed(1)}" height="18" rx="3" fill="${isHl ? highlightColor : color}"/>
       <text x="${labelW + w + 8}" y="${y + 16}" font-size="13" font-weight="700" fill="#12312c">${fmt(p.value, decimals)}${unit}</text>`;
     })
     .join('');
